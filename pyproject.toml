@@ -1,0 +1,28 @@
+[project]
+name = "pychain"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "ignius299792458",email = "bogati.mahesh.299.792.458@gmail.com"}
+]
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi (>=0.135.3,<0.136.0)",
+    "uvicorn (>=0.44.0,<0.45.0)",
+    "cryptography (>=46.0.6,<47.0.0)",
+    "httpx (>=0.28.1,<0.29.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[dependency-groups]
+dev = [
+    "pytest (>=9.0.2,<10.0.0)",
+    "pytest-asyncio (>=1.3.0,<2.0.0)",
+    "httpx (>=0.28.1,<0.29.0)",
+    "black (>=26.3.1,<27.0.0)",
+    "ruff (>=0.15.9,<0.16.0)"
+]

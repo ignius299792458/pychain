@@ -1,0 +1,172 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    // ─────────────────────────────────────────────
+    // 1. FastAPI server — primary debug target
+    //    Breakpoints work inside main.py, blockchain.py,
+    //    wallet.py, node_network.py — everywhere.
+    //    Hot-reload is OFF in debug mode (uvicorn --reload
+    //    spawns a child process that the debugger can't attach to).
+    //    Use the "attach" config below if you need reload.
+    // ─────────────────────────────────────────────
+    {
+      "name": "FastAPI — node 1 (port 5000)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": [
+        "main:app",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "5000",
+        "--log-level",
+        "debug"
+      ],
+      "jinja": true,
+      "justMyCode": false,
+      "cwd": "${workspaceFolder}",
+      "envFile": "${workspaceFolder}/.env",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}",
+        "ENV": "development"
+      },
+      "python": "${workspaceFolder}/.venv/bin/python",
+      "console": "integratedTerminal"
+    },
+
+    // ─────────────────────────────────────────────
+    // 2. Second peer node — run both simultaneously
+    //    to test Nakamoto consensus locally.
+    //    Start node 1 first, then launch this.
+    //    POST /nodes/register from node 1 → http://localhost:5001
+    // ─────────────────────────────────────────────
+    {
+      "name": "FastAPI — node 2 (port 5001)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": [
+        "main:app",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "5001",
+        "--log-level",
+        "debug"
+      ],
+      "justMyCode": false,
+      "cwd": "${workspaceFolder}",
+      "envFile": "${workspaceFolder}/.env",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}",
+        "ENV": "development"
+      },
+      "python": "${workspaceFolder}/.venv/bin/python",
+      "console": "integratedTerminal"
+    },
+
+    // ─────────────────────────────────────────────
+    // 3. Attach to a running uvicorn --reload process
+    //    Workflow:
+    //      Terminal → uvicorn main:app --reload --port 5000
+    //    Then launch this config. Debugger attaches to the
+    //    running process — breakpoints work, reload still works.
+    // ─────────────────────────────────────────────
+    {
+      "name": "Attach to running uvicorn",
+      "type": "debugpy",
+      "request": "attach",
+      "connect": {
+        "host": "localhost",
+        "port": 5678
+      },
+      "pathMappings": [
+        {
+          "localRoot": "${workspaceFolder}",
+          "remoteRoot": "${workspaceFolder}"
+        }
+      ],
+      "justMyCode": false
+    },
+
+    // ─────────────────────────────────────────────
+    // 4. Pytest — run the full test suite
+    //    Breakpoints in test files and source both work.
+    //    -s keeps print() output visible in the terminal.
+    // ─────────────────────────────────────────────
+    {
+      "name": "Pytest — all tests",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": ["tests/", "-v", "-s", "--tb=short"],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}"
+      },
+      "python": "${workspaceFolder}/.venv/bin/python",
+      "console": "integratedTerminal",
+      "justMyCode": false
+    },
+
+    // ─────────────────────────────────────────────
+    // 6. Pytest — debug a single test file
+    //    Opens whichever test file is active in the editor.
+    // ─────────────────────────────────────────────
+    {
+      "name": "Pytest — current file",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": ["${file}", "-v", "-s"],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}"
+      },
+      "python": "${workspaceFolder}/.venv/bin/python",
+      "console": "integratedTerminal",
+      "justMyCode": false
+    },
+
+    // ─────────────────────────────────────────────
+    // 7. Current file — run any .py file directly
+    //    Quick way to debug wallet.py or blockchain.py
+    //    in isolation without the full server.
+    // ─────────────────────────────────────────────
+    {
+      "name": "Run current file",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${file}",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}"
+      },
+      "python": "${workspaceFolder}/.venv/bin/python",
+      "console": "integratedTerminal",
+      "justMyCode": false
+    }
+  ],
+
+  // ─────────────────────────────────────────────
+  // Compound configs — launch multiple targets at once.
+  // "Two nodes" starts both FastAPI instances so you can
+  // test peer consensus without switching configs.
+  // ─────────────────────────────────────────────
+  "compounds": [
+    {
+      "name": "Two nodes (consensus demo)",
+      "configurations": [
+        "FastAPI — node 1 (port 5000)",
+        "FastAPI — node 2 (port 5001)"
+      ],
+      "stopAll": true,
+      "presentation": {
+        "hidden": false,
+        "group": "compound",
+        "order": 1
+      }
+    }
+  ]
+}

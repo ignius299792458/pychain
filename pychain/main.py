@@ -18,10 +18,9 @@ Run:
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
-import json
 
 from blockchain import Blockchain
-from wallet import generate_wallet, sign_transaction, public_key_to_address
+from wallet import generate_wallet, sign_transaction
 from node_network import NodeNetwork
 
 
@@ -45,6 +44,7 @@ network = NodeNetwork()
 # Pydantic schemas
 # ---------------------------------------------------------------------------
 
+
 class TransactionIn(BaseModel):
     sender: str = Field(..., description="Sender wallet address")
     recipient: str = Field(..., description="Recipient wallet address")
@@ -64,6 +64,7 @@ class NodeListIn(BaseModel):
 # ---------------------------------------------------------------------------
 # Wallet endpoints
 # ---------------------------------------------------------------------------
+
 
 @app.post("/wallet/new", tags=["Wallet"])
 def new_wallet():
@@ -110,6 +111,7 @@ def sign_tx(body: dict):
 # Transaction endpoints
 # ---------------------------------------------------------------------------
 
+
 @app.post("/transactions/new", tags=["Transactions"])
 def new_transaction(tx: TransactionIn):
     """
@@ -146,6 +148,7 @@ def get_mempool():
 # ---------------------------------------------------------------------------
 # Mining endpoint
 # ---------------------------------------------------------------------------
+
 
 @app.post("/mine", tags=["Mining"])
 def mine(req: MineRequest):
@@ -185,6 +188,7 @@ def mine(req: MineRequest):
 # Chain endpoints
 # ---------------------------------------------------------------------------
 
+
 @app.get("/chain", tags=["Chain"])
 def get_chain():
     """
@@ -223,13 +227,16 @@ def validate_chain():
 def get_block(index: int):
     """Fetch a single block by index."""
     if index < 0 or index >= len(blockchain.chain):
-        raise HTTPException(404, detail=f"Block {index} not found. Chain height: {blockchain.height}")
+        raise HTTPException(
+            404, detail=f"Block {index} not found. Chain height: {blockchain.height}"
+        )
     return blockchain.chain[index].to_dict()
 
 
 # ---------------------------------------------------------------------------
 # Peer / consensus endpoints
 # ---------------------------------------------------------------------------
+
 
 @app.post("/nodes/register", tags=["Network"])
 def register_nodes(node_list: NodeListIn):
@@ -285,6 +292,7 @@ async def resolve_consensus():
 # ---------------------------------------------------------------------------
 # Health / info
 # ---------------------------------------------------------------------------
+
 
 @app.get("/", tags=["Info"])
 def root():

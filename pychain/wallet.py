@@ -13,18 +13,14 @@ Why secp256k1?
 import base64
 import json
 
-from cryptography.hazmat.primitives.asymmetric import ec
-from cryptography.hazmat.primitives.asymmetric.utils import (
-    decode_dss_signature,
-    encode_dss_signature,
-)
-from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.exceptions import InvalidSignature
-
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import ec
 
 # ---------------------------------------------------------------------------
 # Wallet generation
 # ---------------------------------------------------------------------------
+
 
 def generate_wallet() -> dict:
     """
@@ -68,6 +64,7 @@ def generate_wallet() -> dict:
 # Signing
 # ---------------------------------------------------------------------------
 
+
 def sign_transaction(private_key_pem: str, transaction: dict) -> str:
     """
     Sign a transaction dict with the given PEM private key.
@@ -95,7 +92,10 @@ def sign_transaction(private_key_pem: str, transaction: dict) -> str:
 # Verification
 # ---------------------------------------------------------------------------
 
-def verify_transaction(public_key_pem: str, transaction: dict, signature_b64: str) -> bool:
+
+def verify_transaction(
+    public_key_pem: str, transaction: dict, signature_b64: str
+) -> bool:
     """
     Verify a transaction signature using the sender's public key.
 
@@ -121,6 +121,7 @@ def verify_transaction(public_key_pem: str, transaction: dict, signature_b64: st
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
 
 def public_key_to_address(public_key_pem: str) -> str:
     """Derive the wallet address from a PEM public key."""

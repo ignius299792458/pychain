@@ -6,8 +6,8 @@ import hashlib
 import json
 import time
 
-import db
-from wallet import verify_transaction
+import pychain.db as db
+from pychain.wallet import verify_transaction
 
 
 def merkle_root(transactions: list[dict]) -> str:

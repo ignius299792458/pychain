@@ -53,3 +53,8 @@ logs/
 
 # pychain sqlite db
 pychain.db
+
+
+# credentials files:
+pychain.db*
+wallet.json

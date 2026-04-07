@@ -16,11 +16,13 @@ Run:
     uvicorn main:app --reload --port 5001  (second node)
 """
 
-from blockchain import Blockchain
 from fastapi import FastAPI, HTTPException
-from node_network import NodeNetwork
 from pydantic import BaseModel, Field
-from wallet import (
+
+from pychain.blockchain import Blockchain
+from pychain.db import init_db
+from pychain.node_network import NodeNetwork
+from pychain.wallet import (
     encrypt_and_save_wallet,
     generate_wallet,
     load_and_decrypt_wallet,
@@ -39,6 +41,7 @@ app = FastAPI(
 
 # Global singletons — in a real system these would be persisted to disk
 # (RocksDB, LevelDB, or PostgreSQL) and loaded on startup.
+init_db()
 blockchain = Blockchain()
 network = NodeNetwork()
 
@@ -80,14 +83,15 @@ def new_wallet(body: dict):
     In a production system you'd use a HD wallet (BIP-32) to derive
     multiple addresses from a single seed phrase. Here we keep it simple.
     """
-    if body["password"] is None:
+    password = body["password"]
+    if password is None:
         raise HTTPException(400, detail="Password required")
 
     # Generate Wallet
     wallet = generate_wallet()
 
     # save wallet detail to db
-    encrypt_and_save_wallet(wallet=wallet)
+    encrypt_and_save_wallet(wallet=wallet, password=password)
 
     return {
         "message": "New wallet created. Store your private key securely — it is not saved.",

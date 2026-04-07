@@ -1,0 +1,313 @@
+{
+  "info": {
+    "name": "PyChain API",
+    "description": "Full collection for PyChain — ECDSA wallets, signed transactions, PoW mining, chain validation, and Nakamoto peer consensus.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url",       "value": "http://localhost:5000", "type": "string" },
+    { "key": "private_key",    "value": "",                      "type": "string" },
+    { "key": "public_key",     "value": "",                      "type": "string" },
+    { "key": "address",        "value": "",                      "type": "string" },
+    { "key": "recipient",      "value": "",                      "type": "string" },
+    { "key": "signature",      "value": "",                      "type": "string" },
+    { "key": "miner_address",  "value": "",                      "type": "string" },
+    { "key": "password",       "value": "secret123",             "type": "string" }
+  ],
+  "item": [
+
+    {
+      "name": "Info",
+      "item": [
+        {
+          "name": "Health check",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/", "host": ["{{base_url}}"], "path": [""] },
+            "description": "Returns chain height, mempool size, peer count, difficulty, and mining reward."
+          }
+        }
+      ]
+    },
+
+    {
+      "name": "Wallet",
+      "item": [
+
+        {
+          "name": "1. Generate wallet",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.wallet) {",
+                  "  pm.collectionVariables.set('private_key', body.wallet.private_key_pem);",
+                  "  pm.collectionVariables.set('public_key',  body.wallet.public_key_pem);",
+                  "  pm.collectionVariables.set('address',     body.wallet.address);",
+                  "  console.log('Wallet address:', body.wallet.address);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/wallet/new", "host": ["{{base_url}}"], "path": ["wallet", "new"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"{{password}}\"\n}"
+            },
+            "description": "Generates a new ECDSA keypair. Auto-saves private_key, public_key, and address to collection variables."
+          }
+        },
+
+        {
+          "name": "2. Get wallet",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/wallet?password={{password}}",
+              "host": ["{{base_url}}"],
+              "path": ["wallet"],
+              "query": [{ "key": "password", "value": "{{password}}" }]
+            },
+            "description": "Retrieve and decrypt the stored wallet using the password."
+          }
+        },
+
+        {
+          "name": "3. Generate miner wallet",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.wallet) {",
+                  "  pm.collectionVariables.set('miner_address', body.wallet.address);",
+                  "  console.log('Miner address:', body.wallet.address);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/wallet/new", "host": ["{{base_url}}"], "path": ["wallet", "new"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"{{password}}\"\n}"
+            },
+            "description": "Generate a second wallet to act as the miner. Saves miner_address to collection variables."
+          }
+        },
+
+        {
+          "name": "4. Sign transaction",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (body.signature) {",
+                  "  pm.collectionVariables.set('signature', body.signature);",
+                  "  console.log('Signature saved:', body.signature.substring(0, 20) + '...');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/wallet/sign", "host": ["{{base_url}}"], "path": ["wallet", "sign"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"private_key_pem\": \"{{private_key}}\",\n  \"sender\":          \"{{address}}\",\n  \"recipient\":       \"{{recipient}}\",\n  \"amount\":          10.0\n}"
+            },
+            "description": "Signs a transaction payload using the sender's private key. Saves the base64 signature to collection variables.\n\nNote: set {{recipient}} to any address before running."
+          }
+        }
+
+      ]
+    },
+
+    {
+      "name": "Transactions",
+      "item": [
+
+        {
+          "name": "5. Submit transaction",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/transactions/new", "host": ["{{base_url}}"], "path": ["transactions", "new"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sender\":     \"{{address}}\",\n  \"recipient\":  \"{{recipient}}\",\n  \"amount\":     10.0,\n  \"public_key\": \"{{public_key}}\",\n  \"signature\":  \"{{signature}}\"\n}"
+            },
+            "description": "Submit a signed transaction to the mempool. Requires a valid ECDSA signature — the node re-verifies it before accepting."
+          }
+        },
+
+        {
+          "name": "Submit transaction — invalid signature (expect 400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/transactions/new", "host": ["{{base_url}}"], "path": ["transactions", "new"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sender\":     \"{{address}}\",\n  \"recipient\":  \"{{recipient}}\",\n  \"amount\":     10.0,\n  \"public_key\": \"{{public_key}}\",\n  \"signature\":  \"dGhpc2lzYW5pbnZhbGlkc2lnbmF0dXJl\"\n}"
+            },
+            "description": "Deliberately sends a bad signature. Expect 400 — Invalid transaction signature."
+          }
+        },
+
+        {
+          "name": "6. View mempool",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/mempool", "host": ["{{base_url}}"], "path": ["mempool"] },
+            "description": "Inspect all pending (unconfirmed) transactions waiting to be mined."
+          }
+        }
+
+      ]
+    },
+
+    {
+      "name": "Mining",
+      "item": [
+
+        {
+          "name": "7. Mine block",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/mine", "host": ["{{base_url}}"], "path": ["mine"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"miner_address\": \"{{miner_address}}\"\n}"
+            },
+            "description": "Mines all pending transactions into a new block. Runs Proof of Work (difficulty=4, finds nonce where hash starts with '0000'). Miner receives the coinbase reward."
+          }
+        },
+
+        {
+          "name": "Mine — empty mempool (expect 400)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/mine", "host": ["{{base_url}}"], "path": ["mine"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"miner_address\": \"{{miner_address}}\"\n}"
+            },
+            "description": "Mine with no pending transactions. Expect 400 — No pending transactions."
+          }
+        }
+
+      ]
+    },
+
+    {
+      "name": "Chain",
+      "item": [
+
+        {
+          "name": "8. Get full chain",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/chain", "host": ["{{base_url}}"], "path": ["chain"] },
+            "description": "Returns the full blockchain — all blocks with their transactions, hashes, nonces, and Merkle roots."
+          }
+        },
+
+        {
+          "name": "9. Validate chain",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/chain/valid", "host": ["{{base_url}}"], "path": ["chain", "valid"] },
+            "description": "Full chain validation: hash integrity, PoW difficulty, chain linkage, Merkle root, and all transaction signatures. Returns { valid, reason, chain_length }."
+          }
+        },
+
+        {
+          "name": "10. Get block by index",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/chain/block/0",
+              "host": ["{{base_url}}"],
+              "path": ["chain", "block", "0"]
+            },
+            "description": "Fetch a single block by its index. Change '0' to any block number. Block 0 is the genesis block."
+          }
+        },
+
+        {
+          "name": "Get block — not found (expect 404)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/chain/block/9999",
+              "host": ["{{base_url}}"],
+              "path": ["chain", "block", "9999"]
+            },
+            "description": "Fetch a block index that doesn't exist. Expect 404."
+          }
+        }
+
+      ]
+    },
+
+    {
+      "name": "Network",
+      "item": [
+
+        {
+          "name": "11. Register peer nodes",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{base_url}}/nodes/register", "host": ["{{base_url}}"], "path": ["nodes", "register"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nodes\": [\n    \"http://localhost:5001\",\n    \"http://localhost:5002\"\n  ]\n}"
+            },
+            "description": "Register one or more peer node URLs. These are used by the consensus resolver to compare chain lengths."
+          }
+        },
+
+        {
+          "name": "12. List peer nodes",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/nodes", "host": ["{{base_url}}"], "path": ["nodes"] },
+            "description": "List all currently registered peer nodes."
+          }
+        },
+
+        {
+          "name": "13. Resolve consensus",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/nodes/resolve", "host": ["{{base_url}}"], "path": ["nodes", "resolve"] },
+            "description": "Runs Nakamoto consensus — fetches /chain from every peer, validates each one, and replaces the local chain if a longer valid chain is found. Returns { replaced, message, chain_length }."
+          }
+        }
+
+      ]
+    }
+
+  ]
+}

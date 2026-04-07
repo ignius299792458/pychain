@@ -27,7 +27,7 @@ import os
 import sqlite3
 from contextlib import contextmanager
 
-import utils
+from pychain.utils import get_uuid_str
 
 DB_PATH = os.getenv("PYCHAIN_DB_PATH", "pychain.db")
 
@@ -99,7 +99,7 @@ def save_block(block) -> None:
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """,
             (
-                utils.get_uuid_str(),
+                get_uuid_str(),
                 block.index,
                 block.hash,
                 block.previous_hash,

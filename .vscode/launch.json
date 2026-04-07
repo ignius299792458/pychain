@@ -15,9 +15,9 @@
       "request": "launch",
       "module": "uvicorn",
       "args": [
-        "main:app",
+        "pychain.main:app",
         "--host",
-        "0.0.0.0",
+        "localhost",
         "--port",
         "5000",
         "--log-level",

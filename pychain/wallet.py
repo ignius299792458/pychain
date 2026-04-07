@@ -188,12 +188,18 @@ def encrypt_and_save_wallet(wallet: dict, password: str):
     filepath = os.getenv("WALLET_FILE_PATH")
     encrypted_private_key = encrypt_private_key(wallet["private_key_pem"], password)
 
-    wallet_to_save = {
-        "address": wallet["address"],
-        "public_key_pem": wallet["public_key_pem"],
-        "private_key_encrypted": encrypted_private_key,  # encrypted blob only
-        "password": password,
-    }
+    with open(filepath, "r") as f:
+        existing_wallets = json.load(f)
+
+    wallet_to_save = [
+        *existing_wallets,
+        {
+            "address": wallet["address"],
+            "public_key_pem": wallet["public_key_pem"],
+            "private_key_encrypted": encrypted_private_key,  # encrypted blob only
+            "password": password,
+        },
+    ]
 
     with open(filepath, "w") as f:
         json.dump(wallet_to_save, f, indent=2)

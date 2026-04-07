@@ -5,8 +5,9 @@ Peers are now persisted to SQLite via db.py.
 
 from urllib.parse import urlparse
 
-import db
 import httpx
+
+import pychain.db as db
 
 
 class NodeNetwork:

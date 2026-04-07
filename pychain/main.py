@@ -16,13 +16,11 @@ Run:
     uvicorn main:app --reload --port 5001  (second node)
 """
 
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel, Field
-
 from blockchain import Blockchain
-from wallet import generate_wallet, sign_transaction
+from fastapi import FastAPI, HTTPException
 from node_network import NodeNetwork
-
+from pydantic import BaseModel, Field
+from wallet import generate_wallet, sign_transaction
 
 # ---------------------------------------------------------------------------
 # App setup
@@ -78,6 +76,7 @@ def new_wallet():
     multiple addresses from a single seed phrase. Here we keep it simple.
     """
     wallet = generate_wallet()
+    # save wallet detail to db
     return {
         "message": "New wallet created. Store your private key securely — it is not saved.",
         "wallet": wallet,

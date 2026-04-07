@@ -27,6 +27,8 @@ import os
 import sqlite3
 from contextlib import contextmanager
 
+import utils
+
 DB_PATH = os.getenv("PYCHAIN_DB_PATH", "pychain.db")
 
 
@@ -62,7 +64,7 @@ def init_db() -> None:
         conn.executescript(
             """
             CREATE TABLE IF NOT EXISTS blocks (
-                id           INTEGER PRIMARY KEY,
+                id           TEXT PRIMARY KEY,
                 block_index  INTEGER NOT NULL UNIQUE,
                 hash         TEXT    NOT NULL UNIQUE,
                 previous_hash TEXT   NOT NULL,
@@ -93,10 +95,11 @@ def save_block(block) -> None:
         conn.execute(
             """
             INSERT OR REPLACE INTO blocks
-                (block_index, hash, previous_hash, timestamp, nonce, merkle_root, data)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+                (id, block_index, hash, previous_hash, timestamp, nonce, merkle_root, data)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """,
             (
+                utils.get_uuid_str(),
                 block.index,
                 block.hash,
                 block.previous_hash,

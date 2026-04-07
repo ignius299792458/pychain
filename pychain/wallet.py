@@ -11,9 +11,12 @@ Why secp256k1?
 """
 
 import base64
+import hashlib
 import json
+import os
 
 from cryptography.exceptions import InvalidSignature
+from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec
 
@@ -132,3 +135,86 @@ def public_key_to_address(public_key_pem: str) -> str:
             serialization.PublicFormat.SubjectPublicKeyInfo,
         )
     ).decode()[-20:]
+
+
+def encrypt_private_key(private_key: str, password: str) -> str:
+    """
+    Encrypts a PEM private key string using a password.
+
+    Password is hashed with SHA-256 to produce a 32-byte key,
+    then base64url-encoded to satisfy Fernet's key format requirement.
+
+    Returns a base64-encoded encrypted string safe to store in DB or file.
+    """
+    enc_key = hashlib.sha256(password.encode()).digest()
+    f = Fernet(base64.urlsafe_b64encode(enc_key))
+
+    # PEM is a str — encode to bytes before encrypting
+    encrypted = f.encrypt(private_key.encode("utf-8"))
+    return encrypted.decode("utf-8")
+
+
+def decrypt_private_key(encrypted_private_key: str, password: str) -> str:
+    """
+    Decrypts an encrypted private key blob back to PEM string.
+
+    Raises cryptography.fernet.InvalidToken if password is wrong —
+    caller should catch this and handle as 'wrong password'.
+
+    Never store the return value — use it to sign, then discard from memory.
+    """
+    enc_key = hashlib.sha256(password.encode()).digest()
+    f = Fernet(base64.urlsafe_b64encode(enc_key))
+
+    # encrypted_private_key is str — encode back to bytes for Fernet
+    decrypted = f.decrypt(encrypted_private_key.encode("utf-8"))
+    return decrypted.decode("utf-8")  # returns PEM string
+
+
+def encrypt_and_save_wallet(wallet: dict, password: str):
+    """
+    Encrypts the private key and saves the full wallet to a JSON file.
+
+    Private key is encrypted before writing — public key and address
+    are safe to store as plaintext.
+
+    Structure saved:
+        {
+            "address": "...",
+            "public_key_pem": "...",
+            "private_key_encrypted": "..."   ← never raw
+        }
+    """
+    filepath = os.getenv("WALLET_FILE_PATH")
+    encrypted_private_key = encrypt_private_key(wallet["private_key_pem"], password)
+
+    wallet_to_save = {
+        "address": wallet["address"],
+        "public_key_pem": wallet["public_key_pem"],
+        "private_key_encrypted": encrypted_private_key,  # encrypted blob only
+    }
+
+    with open(filepath, "w") as f:
+        json.dump(wallet_to_save, f, indent=2)
+
+
+def load_and_decrypt_wallet(password: str) -> dict:
+    """
+    Loads wallet from file and decrypts the private key into memory.
+
+    Pair this with encrypt_and_save_wallet — completes the round trip.
+    Raises Fernet.InvalidToken if password is wrong.
+    """
+    filepath = os.getenv("WALLET_FILE_PATH")
+    with open(filepath, "r") as f:
+        wallet_data = json.load(f)
+
+    private_key_pem = decrypt_private_key(
+        wallet_data["private_key_encrypted"], password
+    )
+
+    return {
+        "address": wallet_data["address"],
+        "public_key_pem": wallet_data["public_key_pem"],
+        "private_key_pem": private_key_pem,  # back in memory, use and discard
+    }

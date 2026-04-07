@@ -192,6 +192,7 @@ def encrypt_and_save_wallet(wallet: dict, password: str):
         "address": wallet["address"],
         "public_key_pem": wallet["public_key_pem"],
         "private_key_encrypted": encrypted_private_key,  # encrypted blob only
+        "password": password,
     }
 
     with open(filepath, "w") as f:
@@ -208,6 +209,9 @@ def load_and_decrypt_wallet(password: str) -> dict:
     filepath = os.getenv("WALLET_FILE_PATH")
     with open(filepath, "r") as f:
         wallet_data = json.load(f)
+
+    if wallet_data["password"] != password:
+        raise Exception("Password mismatched")
 
     private_key_pem = decrypt_private_key(
         wallet_data["private_key_encrypted"], password

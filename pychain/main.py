@@ -20,7 +20,12 @@ from blockchain import Blockchain
 from fastapi import FastAPI, HTTPException
 from node_network import NodeNetwork
 from pydantic import BaseModel, Field
-from wallet import generate_wallet, sign_transaction
+from wallet import (
+    encrypt_and_save_wallet,
+    generate_wallet,
+    load_and_decrypt_wallet,
+    sign_transaction,
+)
 
 # ---------------------------------------------------------------------------
 # App setup
@@ -65,7 +70,7 @@ class NodeListIn(BaseModel):
 
 
 @app.post("/wallet/new", tags=["Wallet"])
-def new_wallet():
+def new_wallet(body: dict):
     """
     Generate a brand new ECDSA wallet.
 
@@ -75,10 +80,31 @@ def new_wallet():
     In a production system you'd use a HD wallet (BIP-32) to derive
     multiple addresses from a single seed phrase. Here we keep it simple.
     """
+    if body["password"] is None:
+        raise HTTPException(400, detail="Password required")
+
+    # Generate Wallet
     wallet = generate_wallet()
+
     # save wallet detail to db
+    encrypt_and_save_wallet(wallet=wallet)
+
     return {
         "message": "New wallet created. Store your private key securely — it is not saved.",
+        "wallet": wallet,
+    }
+
+
+@app.get("/wallet", tags=["Wallet"])
+def get_wallet(password: str = None):
+
+    if password is None:
+        raise HTTPException(400, detail="Password required")
+
+    wallet = load_and_decrypt_wallet(password=password)
+
+    return {
+        "message": "Wallet Detail",
         "wallet": wallet,
     }
 

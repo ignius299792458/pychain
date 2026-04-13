@@ -1,0 +1,60 @@
+x-node-base: &node-base
+  image: pychain:latest
+  networks:
+    - pychain-ntk
+  deploy:
+    replicas: 1
+    resources:
+      limits:
+        cpus: "1.0"
+        memory: 512M
+      reservations:
+        cpus: "0.25"
+        memory: 128M
+
+services:
+  node1:
+    <<: *node-base
+    ports:
+      - target: 8000
+        published: 5050
+        mode: host
+    volumes:
+      - node1_data:/app/data
+    environment:
+      - NODE_ID=1
+
+  node2:
+    <<: *node-base
+    ports:
+      - target: 8000
+        published: 5051
+        mode: host
+    volumes:
+      - node2_data:/app/data
+    environment:
+      - NODE_ID=2
+
+  node3:
+    <<: *node-base
+    ports:
+      - target: 8000
+        published: 5052
+        mode: host
+    volumes:
+      - node3_data:/app/data
+    environment:
+      - NODE_ID=3
+
+configs:
+  pychain_env:
+    external: true
+
+volumes:
+  node1_data:
+  node2_data:
+  node3_data:
+
+networks:
+  pychain-ntk:
+    driver: overlay

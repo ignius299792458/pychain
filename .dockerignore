@@ -1,0 +1,48 @@
+# ── Python ───────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+
+# ── Dirs ──────────────────────────────
+scripts/
+data/
+
+# ── Virtual environments ──────────────────────────────
+.venv/
+venv/
+env/
+
+# ── Tests and dev tools ───────────────────────────────
+tests/
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# ── Secrets and local config ──────────────────────────
+# .env
+# .env.*
+*.db*          # don't bake the SQLite DB into the image
+/*.db*
+
+# ── VCS ───────────────────────────────────────────────
+.git/
+.gitignore
+
+# ── Editor ────────────────────────────────────────────
+.vscode/
+.idea/
+*.log
+
+# ── Docker files themselves ───────────────────────────
+Dockerfile*
+docker-compose*.yml
+nginx/
+
+# ── Docs / scripts (not needed at runtime) ────────────
+README.md
+scripts/
+docs/

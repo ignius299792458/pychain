@@ -171,7 +171,7 @@ def decrypt_private_key(encrypted_private_key: str, password: str) -> str:
     return decrypted.decode("utf-8")  # returns PEM string
 
 
-def encrypt_and_save_wallet(wallet: dict, password: str):
+def encrypt_and_save_wallet(wallet: dict, password: str) -> dict:
     """
     Encrypts the private key and saves the full wallet to a JSON file.
 
@@ -187,6 +187,10 @@ def encrypt_and_save_wallet(wallet: dict, password: str):
     """
     filepath = os.getenv("WALLET_FILE_PATH")
     encrypted_private_key = encrypt_private_key(wallet["private_key_pem"], password)
+
+    if not os.path.exists(filepath):
+        with open(filepath, "w") as f:
+            json.dump([], f)
 
     with open(filepath, "r") as f:
         existing_wallets = json.load(f)
@@ -204,6 +208,8 @@ def encrypt_and_save_wallet(wallet: dict, password: str):
     with open(filepath, "w") as f:
         json.dump(wallet_to_save, f, indent=2)
 
+    return {**wallet, "private_key_pem": encrypted_private_key}
+
 
 def load_and_decrypt_wallet(password: str) -> dict:
     """
@@ -216,15 +222,19 @@ def load_and_decrypt_wallet(password: str) -> dict:
     with open(filepath, "r") as f:
         wallet_data = json.load(f)
 
-    if wallet_data["password"] != password:
-        raise Exception("Password mismatched")
+    user_wallet = [wallet for wallet in wallet_data if wallet["password"] == password]
+
+    if len(user_wallet) == 0:
+        raise Exception("Password Mismatched")
+
+    user_wallet = user_wallet[0]
 
     private_key_pem = decrypt_private_key(
-        wallet_data["private_key_encrypted"], password
+        user_wallet["private_key_encrypted"], password
     )
 
     return {
-        "address": wallet_data["address"],
-        "public_key_pem": wallet_data["public_key_pem"],
+        "address": user_wallet["address"],
+        "public_key_pem": user_wallet["public_key_pem"],
         "private_key_pem": private_key_pem,  # back in memory, use and discard
     }

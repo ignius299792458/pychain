@@ -58,3 +58,5 @@ pychain.db
 # credentials files:
 pychain.db*
 wallet.json
+
+data

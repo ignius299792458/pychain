@@ -17,6 +17,7 @@ Run:
 """
 
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from pydantic import BaseModel, Field
 
 from pychain.blockchain import Blockchain
@@ -39,6 +40,8 @@ app = FastAPI(
     version="1.0.0",
 )
 
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*"])
+
 # Global singletons — in a real system these would be persisted to disk
 # (RocksDB, LevelDB, or PostgreSQL) and loaded on startup.
 init_db()
@@ -57,6 +60,13 @@ class TransactionIn(BaseModel):
     amount: float = Field(..., gt=0, description="Amount to transfer")
     public_key: str = Field(..., description="Sender's PEM public key")
     signature: str = Field(..., description="Base64 ECDSA signature")
+
+
+class WalletSignBody(BaseModel):
+    private_key_pem: str = Field(..., description="Private Key Pem")
+    sender: str = Field(..., description="Sender Wallet Address")
+    recipient: str = Field(..., description="Recipient Wallet Address")
+    amount: float = Field(..., description="Amout to be transfer")
 
 
 class MineRequest(BaseModel):
@@ -91,10 +101,11 @@ def new_wallet(body: dict):
     wallet = generate_wallet()
 
     # save wallet detail to db
-    encrypt_and_save_wallet(wallet=wallet, password=password)
+    encrpyted_wallet = encrypt_and_save_wallet(wallet=wallet, password=password)
 
     return {
         "message": "New wallet created. Store your private key securely — it is not saved.",
+        "encrpyted_wallet": encrpyted_wallet,
         "wallet": wallet,
     }
 
@@ -114,25 +125,20 @@ def get_wallet(password: str = None):
 
 
 @app.post("/wallet/sign", tags=["Wallet"])
-def sign_tx(body: dict):
+def sign_tx(body: WalletSignBody):
     """
     Convenience endpoint: sign a transaction payload with a private key.
-
-    Body: { "private_key_pem": "...", "sender": "...", "recipient": "...", "amount": 5.0 }
 
     In production, signing ALWAYS happens client-side (never send your private
     key over the network). This endpoint exists for local testing only.
     """
-    required = {"private_key_pem", "sender", "recipient", "amount"}
-    if not required.issubset(body.keys()):
-        raise HTTPException(400, detail=f"Missing fields: {required - body.keys()}")
 
     payload = {
-        "sender": body["sender"],
-        "recipient": body["recipient"],
-        "amount": body["amount"],
+        "sender": body.sender,
+        "recipient": body.recipient,
+        "amount": body.amount,
     }
-    signature = sign_transaction(body["private_key_pem"], payload)
+    signature = sign_transaction(body.private_key_pem, payload)
     return {"signature": signature, "payload": payload}
 
 

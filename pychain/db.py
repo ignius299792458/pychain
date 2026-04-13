@@ -29,7 +29,7 @@ from contextlib import contextmanager
 
 from pychain.utils import get_uuid_str
 
-DB_PATH = os.getenv("PYCHAIN_DB_PATH", "pychain.db")
+DB_PATH = os.getenv("PYCHAIN_DB_PATH", "data/pychain.db")
 
 
 # ---------------------------------------------------------------------------

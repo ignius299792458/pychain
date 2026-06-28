@@ -60,3 +60,4 @@ pychain.db*
 wallet.json
 
 data
+poetry.lock
